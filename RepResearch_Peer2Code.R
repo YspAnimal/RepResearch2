@@ -20,6 +20,8 @@ str(StormData)
 #Aggregate data frame by EVType and sum of fatalities and injuries
 
 StormDataAggFI <- ddply(StormData, "EVTYPE", function(x) data.frame(FATALITIES=sum(x$FATALITIES),INJURIES=sum(x$INJURIES)))
+
+#We need only rows with FATALITIES or INJURIES insteand of 0
 StormDataAggFI <- filter(StormDataAggFI, FATALITIES>0 | INJURIES>0)
 
 StormDataAggDam <- ddply(StormData, "EVTYPE", function(x) data.frame(PROPDMG=sum(x$PROPDMG),CROPDMG=sum(x$CROPDMG)))
