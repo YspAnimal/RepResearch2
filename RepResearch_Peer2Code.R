@@ -1,5 +1,5 @@
 #Set working directory and then download file, unzip it if it does not exist
-setwd("C:/Users/soloveynv/Documents/R Scripts/Coursera/RepResearch2")
+setwd("C:/R_repositories/Coursera/RepResearch2")
 library(data.table)
 library(R.utils)
 library(ggplot2)
