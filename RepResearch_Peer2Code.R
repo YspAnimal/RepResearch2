@@ -6,6 +6,9 @@ library(ggplot2)
 library(plyr)
 library(dplyr)
 library(stringdist)
+library(grid) # for grids
+library(gridExtra) # for advanced plots
+
 URL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 destFile <- "StormData.csv.bz2"
 DataFile <- "StormData.csv"
@@ -19,15 +22,37 @@ str(StormData)
 if (dim(StormData)[2] == 37) {
     StormData$year <- as.numeric(format(as.Date(StormData$BGN_DATE, format = "%m/%d/%Y %H:%M:%S"), "%Y"))
 }
-hist(StormData$year, breaks = 30)
+
+neededColumns <- c("BGN_DATE", "EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
+StormData <- select(StormData, everything(neededColumns))
+
+
+StormData$CleanEVTYPE <- NA_character_
+StormData[grepl("precipitation|rain|hail|drizzle|wet|percip|burst|depression|fog|wall cloud", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Precipitation & Fog"
+StormData[grepl("wind|storm|wnd|hurricane|typhoon", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Wind & Storm"
+StormData[grepl("slide|erosion|slump", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Landslide & Erosion"
+StormData[grepl("warmth|warm|heat|dry|hot|drought|thermia|temperature record|record temperature|record high", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Heat & Drought"
+StormData[grepl("cold|cool|ice|icy|frost|freeze|snow|winter|wintry|wintery|blizzard|chill|freezing|avalanche|glaze|sleet", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Snow & Ice"
+StormData[grepl("flood|surf|blow-out|swells|fld|dam break", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Flooding & High Surf"
+StormData[grepl("seas|high water|tide|tsunami|wave|current|marine|drowning", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "High seas"
+StormData[grepl("dust|saharan", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Dust & Saharan winds"  
+StormData[grepl("tstm|thunderstorm|lightning", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Thunderstorm & Lightning"
+StormData[grepl("tornado|spout|funnel|whirlwind", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Tornado"
+StormData[grepl("fire|smoke|volcanic", StormData$EVTYPE, ignore.case = TRUE), "CleanEVTYPE"] <- "Fire & Volcanic activity"
+
+# remove uncategorized records (CleanEVTYPE == NA) & cast as factor
+StormData <- StormData[complete.cases(StormData$CleanEVTYPE), ]
+StormData$CleanEVTYPE <- as.factor(StormData$CleanEVTYPE)
+
 
 #Aggregate data frame by EVType and sum of fatalities and injuries
-StormDataAggFI <- ddply(StormData, "EVTYPE", function(x) data.frame(FATALITIES=sum(x$FATALITIES),INJURIES=sum(x$INJURIES)))
+StormDataAggFI <- ddply(StormData, "CleanEVTYPE", function(x) data.frame(FATALITIES=sum(x$FATALITIES),INJURIES=sum(x$INJURIES)))
 
 #We need only rows with FATALITIES or INJURIES insteand of 0
 StormDataAggFI <- filter(StormDataAggFI, FATALITIES>0 | INJURIES>0)
 
-StormDataAggDam <- ddply(StormData, "EVTYPE", function(x) data.frame(PROPDMG=x$PROPDMG, PROPDMGEXP=x$PROPDMGEXP, CROPDMG=x$CROPDMG, CROPDMGEXP=x$CROPDMGEXP))
+#Drop columns that doesn't need in analyse
+StormDataAggDam <- ddply(StormData, "CleanEVTYPE", function(x) data.frame(PROPDMG=x$PROPDMG, PROPDMGEXP=x$PROPDMGEXP, CROPDMG=x$CROPDMG, CROPDMGEXP=x$CROPDMGEXP))
 StormDataAggDam <- filter(StormDataAggDam, PROPDMG>0 | CROPDMG>0)
 
 # Sorting the property exponent data
@@ -47,7 +72,7 @@ StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "7"] <- 1e+07
 StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "H"] <- 100
 StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "1"] <- 10
 StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "8"] <- 1e+08
-# give 0 to invalid exponent data, so they not count in
+# 0 to invalid exponent data, so they not count in
 StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "+"] <- 0
 StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "-"] <- 0
 StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "?"] <- 0
@@ -68,5 +93,34 @@ StormDataAggDam$CROPEXP[StormDataAggDam$CROPDMGEXP == "?"] <- 0
 # compute the crop damage value
 StormDataAggDam$CROPDMGVAL <- StormDataAggDam$CROPDMG * StormDataAggDam$CROPEXP
 
-StormDataAggDam <- 
+StormDataAggDam <- ddply(StormDataAggDam, "CleanEVTYPE", function(x) data.frame(PROPDMGVAL=sum(x$PROPDMGVAL),CROPDMGVAL=sum(x$CROPDMGVAL)))
+meltStormDataAggDam <- melt(StormDataAggDam)
+
+#Transform value in EVTYPE column. We will use this rule: The EVTYPE contains ca. 985 unique source events. 
+#Many of them can be reduced to similar instances. 
+#In this instance there are 11 levels defined, covering effectifly the majority and all useful data records (summaries and combinations are skipped)
+
+fatalitiesPlot <- qplot(reorder(CleanEVTYPE, FATALITIES), data = StormDataAggFI, weight=FATALITIES, geom = "bar") + 
+    scale_y_continuous("Number of Fatalities") + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + xlab("Event Type") + 
+    ggtitle("Total Fatalities by Severe Weather\n Events in the U.S.\n from 1995 - 2011")
+
+injuriesPlot <- qplot(reorder(CleanEVTYPE, INJURIES), data = StormDataAggFI, weight=INJURIES, geom = "bar") + 
+    scale_y_continuous("Number of Injuries") + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + xlab("Event Type") +
+    ggtitle("Total Injuries by Severe Weather\n Events in the U.S.\n from 1995 - 2011")
+    
+grid.arrange(fatalitiesPlot, injuriesPlot, ncol = 2)    
+
+
+ggplot(meltStormDataAggDam, aes(x=reorder(CleanEVTYPE, value), y=value/1000000, fill=variable)) +
+    geom_bar(stat="identity") + 
+    scale_y_continuous("Total Damage (millions of USD)") + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+    xlab("Event Type") + 
+    ggtitle("Aggregated property and crop damage for weather events") +
+    legend()
+
+
+
 
