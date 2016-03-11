@@ -24,7 +24,7 @@ if (dim(StormData)[2] == 37) {
 }
 
 neededColumns <- c("BGN_DATE", "EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
-StormData <- select(StormData, everything(neededColumns))
+StormData <- select(StormData, one_of(neededColumns))
 
 
 StormData$CleanEVTYPE <- NA_character_
@@ -103,12 +103,12 @@ meltStormDataAggDam <- melt(StormDataAggDam)
 fatalitiesPlot <- qplot(reorder(CleanEVTYPE, FATALITIES), data = StormDataAggFI, weight=FATALITIES, geom = "bar") + 
     scale_y_continuous("Number of Fatalities") + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + xlab("Event Type") + 
-    ggtitle("Total Fatalities by Severe Weather\n Events in the U.S.\n from 1995 - 2011")
+    ggtitle("Total Fatalities by Severe Weather\n Events in the U.S.")
 
 injuriesPlot <- qplot(reorder(CleanEVTYPE, INJURIES), data = StormDataAggFI, weight=INJURIES, geom = "bar") + 
     scale_y_continuous("Number of Injuries") + 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + xlab("Event Type") +
-    ggtitle("Total Injuries by Severe Weather\n Events in the U.S.\n from 1995 - 2011")
+    ggtitle("Total Injuries by Severe Weather\n Events in the U.S.")
     
 grid.arrange(fatalitiesPlot, injuriesPlot, ncol = 2)    
 
@@ -119,7 +119,7 @@ ggplot(meltStormDataAggDam, aes(x=reorder(CleanEVTYPE, value), y=value/1000000, 
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
     xlab("Event Type") + 
     ggtitle("Aggregated property and crop damage for weather events") +
-    legend()
+    scale_fill_discrete(name="Damage type", labels=c("Property Damages", "Crop Damages"))
 
 
 
