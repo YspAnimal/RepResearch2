@@ -1,0 +1,78 @@
+---
+output:
+  html_document:
+    keep_md: yes
+    toc: yes
+---
+
+# Analysis of impact, both economic as victims, of different weather events in the USA based on the NOAA Storm Database
+
+By Nikolay Solovey (animal1986@mail.ru)
+Date: 15-03-2016
+
+###Assignment
+
+The basic goal of this assignment is to explore the NOAA Storm Database and answer some basic questions about severe weather events. You must use the database to answer the questions below and show the code for your entire analysis. Your analysis can consist of tables, figures, or other summaries. You may use any R package you want to support your analysis.
+
+###Synopsis
+In this report, we aim to analyze the impact of different weather events on public health and economy based on the storm database collected from the U.S. National Oceanic and Atmospheric Administration's (NOAA) from 1950 - 2011. We will use the estimates of fatalities, injuries, property and crop damage to decide which types of event are most harmful to the population health and economy. From these data, we found that excessive heat and tornado are most harmful with respect to population health and Flooding & High surf, Wind & Storm have the greatest economic consequences.
+
+###Data Processing
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+sessionInfo() # Display information about system
+```
+
+##### 3.1. Load libraries
+Necessary libraries to perform loading, computation, transformation and plotting of data
+```{r, warning=FALSE, message=FALSE}
+library(data.table) # For loading data into a dataframe and for melt method
+library(R.utils) # For bunzip2
+library(ggplot2) # For plots
+library(plyr) # For aggregate and summarise data
+library(dplyr) # For aggregate and summarise data
+library(grid) # for grids
+library(gridExtra) # for advanced plots
+```
+
+##### 3.2. Load source file and extract it
+Start loading the specified source files from URL and storing it locally
+```{r}
+URL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+destFile <- "StormData.csv.bz2"
+DataFile <- "StormData.csv"
+if (!file.exists(destFile)){
+    download.file(URL, destfile = destFile, mode='wb')
+}
+if (!file.exists(DataFile)){
+    bunzip2(destFile, DataFile)
+}
+```
+
+##### 3.3. Load the data
+Read the source .csv file
+```{r, warning=FALSE}
+StormData <- fread(DataFile)
+```
+
+##### 3.4. Remove unwanted colums (not used for this analysis)
+Just keep the columns: BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP needed for analysis
+```{r, warning=FALSE}
+neededColumns <- c("BGN_DATE", "EVTYPE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
+StormData <- select(StormData, one_of(neededColumns))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

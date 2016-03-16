@@ -5,7 +5,7 @@ library(R.utils)
 library(ggplot2)
 library(plyr)
 library(dplyr)
-library(stringdist)
+#library(stringdist)
 library(grid) # for grids
 library(gridExtra) # for advanced plots
 
@@ -15,9 +15,10 @@ DataFile <- "StormData.csv"
 if (!file.exists(destFile)){
     download.file(URL, destfile = destFile, mode='wb')
 }
-bunzip2(destFile, DataFile)
+if (!file.exists(DataFile)){
+    bunzip2(destFile, DataFile)
+}
 StormData <- fread(DataFile)
-str(StormData)
 
 if (dim(StormData)[2] == 37) {
     StormData$year <- as.numeric(format(as.Date(StormData$BGN_DATE, format = "%m/%d/%Y %H:%M:%S"), "%Y"))
@@ -52,8 +53,7 @@ StormDataAggFI <- ddply(StormData, "CleanEVTYPE", function(x) data.frame(FATALIT
 StormDataAggFI <- filter(StormDataAggFI, FATALITIES>0 | INJURIES>0)
 
 #Drop columns that doesn't need in analyse
-StormDataAggDam <- ddply(StormData, "CleanEVTYPE", function(x) data.frame(PROPDMG=x$PROPDMG, PROPDMGEXP=x$PROPDMGEXP, CROPDMG=x$CROPDMG, CROPDMGEXP=x$CROPDMGEXP))
-StormDataAggDam <- filter(StormDataAggDam, PROPDMG>0 | CROPDMG>0)
+StormDataAggDam <- filter(StormData, PROPDMG>0 | CROPDMG>0)
 
 # Sorting the property exponent data
 StormDataAggDam$PROPEXP[StormDataAggDam$PROPDMGEXP == "K"] <- 1000
