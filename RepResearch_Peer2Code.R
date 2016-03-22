@@ -96,6 +96,18 @@ StormDataAggDam$CROPDMGVAL <- StormDataAggDam$CROPDMG * StormDataAggDam$CROPEXP
 StormDataAggDam <- ddply(StormDataAggDam, "CleanEVTYPE", function(x) data.frame(PROPDMGVAL=sum(x$PROPDMGVAL),CROPDMGVAL=sum(x$CROPDMGVAL)))
 meltStormDataAggDam <- melt(StormDataAggDam)
 
+
+fatalities <- arrange(StormDataAggFI, desc(FATALITIES))
+injuries <- arrange(StormDataAggFI, desc(INJURIES))
+head(select(fatalities, CleanEVTYPE, FATALITIES), 3)
+head(select(injuries, CleanEVTYPE, INJURIES), 3)
+
+propDAM <- arrange(StormDataAggDam, desc(PROPDMGVAL))
+cropDAM <- arrange(StormDataAggDam, desc(CROPDMGVAL))
+head(select(propDAM, CleanEVTYPE, PROPDMGVAL), 3)
+head(select(cropDAM, CleanEVTYPE, CROPDMGVAL), 3)
+
+
 #Transform value in EVTYPE column. We will use this rule: The EVTYPE contains ca. 985 unique source events. 
 #Many of them can be reduced to similar instances. 
 #In this instance there are 11 levels defined, covering effectifly the majority and all useful data records (summaries and combinations are skipped)

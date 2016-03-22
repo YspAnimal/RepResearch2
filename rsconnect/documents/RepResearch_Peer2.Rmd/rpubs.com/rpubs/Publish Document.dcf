@@ -1,0 +1,7 @@
+name: Publish Document
+account: rpubs
+server: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/161711/8bd0fdfef6d84c839ce1fb0388e152d7
+bundleId: https://api.rpubs.com/api/v1/document/161711/8bd0fdfef6d84c839ce1fb0388e152d7
+url: http://rpubs.com/YspAnimal/161711
+when: 1458558545.137

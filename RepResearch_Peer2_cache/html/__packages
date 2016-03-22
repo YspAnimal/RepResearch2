@@ -1,10 +1,4 @@
 base
-methods
-datasets
-utils
-grDevices
-graphics
-stats
 data.table
 R.methodsS3
 R.oo
@@ -12,5 +6,4 @@ R.utils
 ggplot2
 plyr
 dplyr
-grid
 gridExtra
